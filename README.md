@@ -5,6 +5,7 @@ Editable construction cost estimate for the **Tinsley Barndominium (plan TB-4060
 **Live app:** https://keubanks16.github.io/BarndoCostEstimate/
 
 ## Using it
+- Tap the title (✎) to rename the estimate — it carries to the PDF and export file names.
 - Tap any price to change it; totals, contingency, GC fee and $/sq ft update instantly.
 - **Low and high follow Expected automatically** — each line keeps its spread (e.g. 75% / 145% of expected). Edit low or high by hand to set a new spread for that line; Contracted and Paid lines lock low = high = expected.
 - Tap ▸ on a line for low / high numbers, item name, basis, notes and status (Estimate, Quoted, Contracted, Paid).
