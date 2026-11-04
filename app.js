@@ -19,9 +19,10 @@
     for (const c of ORIGINAL.cats) for (const o of c.items) if (o.name === it.name) return o;
     const c = ORIGINAL.cats[ci]; return c && c.items[ii];
   }
+  // Spread comes from the starting estimate, unless the user set low/high by hand (it.manual).
   function spread(it, ci, ii) {
-    if (isFinite(it.lr) && isFinite(it.hr)) return [it.lr, it.hr];
-    const o = sane(it) ? it : origFor(ci, ii, it);
+    if (it.manual && isFinite(it.lr) && isFinite(it.hr)) return [it.lr, it.hr];
+    const o = origFor(ci, ii, it);
     return sane(o) ? [num(o.low) / num(o.exp), num(o.high) / num(o.exp)] : [DEF_LR, DEF_HR];
   }
   function applyRange(it, ci, ii) {
@@ -30,10 +31,8 @@
     if (FIXED.includes(it.status)) { it.low = e; it.high = e; return; }
     it.low = roundNice(e * lr); it.high = roundNice(e * hr);
   }
-  // Fix saved estimates where Expected was changed before this feature (low above expected, etc.)
-  S.cats.forEach((c, ci) => c.items.forEach((it, ii) => {
-    if (num(it.low) > num(it.exp) || num(it.exp) > num(it.high)) { delete it.lr; delete it.hr; applyRange(it, ci, ii); }
-  }));
+  // Recompute low/high for every line from its spread (fixes lines edited before this feature).
+  S.cats.forEach((c, ci) => c.items.forEach((it, ii) => applyRange(it, ci, ii)));
 
   function totals() {
     const t = { low: 0, exp: 0, high: 0, cats: [] };
@@ -143,14 +142,13 @@
       const it = S.cats[+itEl.closest('.cat').dataset.ci].items[+itEl.dataset.ii];
       const ci = +itEl.closest('.cat').dataset.ci, ii = +itEl.dataset.ii;
       if (f === 'exp' || f === 'exp2') {
-        const [lr0, hr0] = spread(it, ci, ii); it.lr = lr0; it.hr = hr0;
         it.exp = num(i.value); applyRange(it, ci, ii);
         itEl.querySelectorAll('input[data-f="low"],input[data-f="high"],input[data-f="exp"],input[data-f="exp2"]').forEach(x => {
           if (x !== i) x.value = money(num(x.dataset.f === 'exp2' ? it.exp : it[x.dataset.f]));
         });
       } else if (f === 'low' || f === 'high') {
         it[f] = num(i.value);
-        if (num(it.exp) > 0) { const [lr, hr] = spread(it, ci, ii); it.lr = f === 'low' ? it.low / num(it.exp) : lr; it.hr = f === 'high' ? it.high / num(it.exp) : hr; }
+        if (num(it.exp) > 0) { const e = num(it.exp); it.lr = num(it.low) / e; it.hr = num(it.high) / e; it.manual = true; }
       } else it[f] = i.value;
       if (f === 'status') { applyRange(it, ci, ii); }
       if (f === 'name') itEl.querySelector('.nm').firstChild.textContent = i.value;
