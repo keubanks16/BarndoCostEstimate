@@ -10,6 +10,9 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const open = new Set();
   const DEF_TITLE = 'Tinsley Barndominium — Cost Estimate';
+  const DEF_SUB = 'TB-4060 · 4,053 sf heated · Georgia · land not included';
+  const subtitle = () => S.subtitle == null ? DEF_SUB : S.subtitle;
+  const fitSub = () => ['#title', '#subtitle'].forEach(sel => { const t = $(sel); t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; });
   const title = () => (S.title || '').trim() || DEF_TITLE;
   const fileSafe = t => t.replace(/[—–]/g, '-').replace(/[^A-Za-z0-9 _-]+/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-') || 'Cost-Estimate';
 
@@ -86,6 +89,7 @@
         ${readOnly ? '' : `<button class="add" data-act="add">+ Add item</button>`}
       </section>`).join('');
     $('#title').value = title(); $('#title').disabled = readOnly; document.title = title();
+    $('#subtitle').value = subtitle(); $('#subtitle').disabled = readOnly; fitSub();
     $('#cont').value = (num(S.contingency) * 100).toFixed(1).replace(/\.0$/, '');
     $('#gc').value = (num(S.gc) * 100).toFixed(1).replace(/\.0$/, '');
     $('#sf').value = num(S.sf).toLocaleString('en-US');
@@ -158,7 +162,8 @@
       if (f === 'name') itEl.querySelector('.nm').firstChild.textContent = i.value;
       changed();
     }
-    if (i.id === 'title') { S.title = i.value; document.title = title(); changed(); }
+    if (i.id === 'subtitle') { S.subtitle = i.value.replace(/\n+/g, ' '); fitSub(); changed(); }
+    if (i.id === 'title') { S.title = i.value.replace(/\n+/g, ' '); fitSub(); document.title = title(); changed(); }
     if (i.id === 'cont') { S.contingency = num(i.value) / 100; changed(); }
     if (i.id === 'gc') { S.gc = num(i.value) / 100; changed(); }
     if (i.id === 'sf') { S.sf = num(i.value); changed(); }
@@ -167,6 +172,8 @@
   document.addEventListener('focusout', e => { const i = e.target; if (i.id === 'title' && !i.value.trim()) { S.title = ''; i.value = title(); changed(); } if (i.matches('input[inputmode="decimal"]')) i.value = money(num(i.value)); });
   $('#reset').addEventListener('click', e => { const b = e.currentTarget; if (b.dataset.confirm) { S = JSON.parse(JSON.stringify(ORIGINAL)); open.clear(); render(); changed(); b.textContent = 'Reset to starting estimate'; delete b.dataset.confirm; } else { b.dataset.confirm = 1; b.textContent = 'Tap again — this erases your edits'; } });
 
+  window.addEventListener('resize', fitSub);
+  document.addEventListener('keydown', e => { if ((e.target.id === 'subtitle' || e.target.id === 'title') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
   render();
   status(S.savedAt ? 'Saved on this device' : 'Edits save automatically on this device');
 })();

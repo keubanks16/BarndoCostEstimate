@@ -48,7 +48,13 @@ window.EstimatePDF = (function () {
     newPage(true);
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     text(M, y + 14, NAME, 17, true); y += 22;
-    text(M, y + 10, `Plan TB-4060 · 40' × 60' metal building home with loft · Georgia · ${Number(S.sf || 0).toLocaleString('en-US')} sf heated · land not included · ${date}`, 8.5, false, gray(0.35)); y += 22;
+    const sub = (S.subtitle == null ? 'TB-4060 · 4,053 sf heated · Georgia · land not included' : String(S.subtitle).trim());
+    const subLine = (sub ? sub + ' · ' : '') + date;
+    const lines = []; let cur = '';
+    subLine.split(' ').forEach(w => { if ((cur + ' ' + w).trim().length > 118 && cur) { lines.push(cur); cur = w; } else cur = (cur + ' ' + w).trim(); });
+    if (cur) lines.push(cur);
+    lines.slice(0, 4).forEach((ln, k) => text(M, y + 10 + k * 11, ln, 8.5, false, gray(0.35)));
+    y += 22 + (Math.min(lines.length, 4) - 1) * 11;
     // summary boxes
     const bw = (W - 2 * M - 10) / 2, sf = Number(S.sf) || 1;
     [['OWNER-BUILDER TOTAL', T.ob], ['WITH A GENERAL CONTRACTOR', T.wg]].forEach(([lab, v], i) => {
