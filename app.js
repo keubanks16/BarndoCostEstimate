@@ -9,6 +9,9 @@
   const num = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const open = new Set();
+  const DEF_TITLE = 'Tinsley Barndominium — Cost Estimate';
+  const title = () => (S.title || '').trim() || DEF_TITLE;
+  const fileSafe = t => t.replace(/[—–]/g, '-').replace(/[^A-Za-z0-9 _-]+/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-') || 'Cost-Estimate';
 
   // ---- Auto low/high: each item keeps a spread (low ÷ expected, high ÷ expected).
   // Changing Expected moves Low and High with it; editing Low or High by hand sets a new spread.
@@ -82,6 +85,7 @@
         ${c.items.map((it, ii) => itemRow(ci, ii, it)).join('')}
         ${readOnly ? '' : `<button class="add" data-act="add">+ Add item</button>`}
       </section>`).join('');
+    $('#title').value = title(); $('#title').disabled = readOnly; document.title = title();
     $('#cont').value = (num(S.contingency) * 100).toFixed(1).replace(/\.0$/, '');
     $('#gc').value = (num(S.gc) * 100).toFixed(1).replace(/\.0$/, '');
     $('#sf').value = num(S.sf).toLocaleString('en-US');
@@ -111,12 +115,12 @@
     return rows.map(r => r.map(q).join(',')).join('\n');
   }
   const stamp = () => new Date().toISOString().slice(0, 10);
-  $('#exp').addEventListener('click', () => download('barndo-estimate-' + stamp() + '.json', JSON.stringify(S, null, 2), 'application/json'));
-  $('#csv').addEventListener('click', () => download('barndo-estimate-' + stamp() + '.csv', csv(), 'text/csv'));
+  $('#exp').addEventListener('click', () => download(fileSafe(title()) + '-' + stamp() + '.json', JSON.stringify(S, null, 2), 'application/json'));
+  $('#csv').addEventListener('click', () => download(fileSafe(title()) + '-' + stamp() + '.csv', csv(), 'text/csv'));
   $('#pdf').addEventListener('click', () => {
     try {
       const blob = window.EstimatePDF.build(S, totals(), money);
-      const name = 'Tinsley-Barndominium-Cost-Estimate-' + stamp() + '.pdf';
+      const name = fileSafe(title()) + '-' + stamp() + '.pdf';
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
       document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
       status('PDF created: ' + name);
@@ -154,12 +158,13 @@
       if (f === 'name') itEl.querySelector('.nm').firstChild.textContent = i.value;
       changed();
     }
+    if (i.id === 'title') { S.title = i.value; document.title = title(); changed(); }
     if (i.id === 'cont') { S.contingency = num(i.value) / 100; changed(); }
     if (i.id === 'gc') { S.gc = num(i.value) / 100; changed(); }
     if (i.id === 'sf') { S.sf = num(i.value); changed(); }
   });
   document.addEventListener('change', e => { const i = e.target; if (i.matches('select[data-f], input[data-f="exp"], input[data-f="exp2"]')) render(); });
-  document.addEventListener('focusout', e => { const i = e.target; if (i.matches('input[inputmode="decimal"]')) i.value = money(num(i.value)); });
+  document.addEventListener('focusout', e => { const i = e.target; if (i.id === 'title' && !i.value.trim()) { S.title = ''; i.value = title(); changed(); } if (i.matches('input[inputmode="decimal"]')) i.value = money(num(i.value)); });
   $('#reset').addEventListener('click', e => { const b = e.currentTarget; if (b.dataset.confirm) { S = JSON.parse(JSON.stringify(ORIGINAL)); open.clear(); render(); changed(); b.textContent = 'Reset to starting estimate'; delete b.dataset.confirm; } else { b.dataset.confirm = 1; b.textContent = 'Tap again — this erases your edits'; } });
 
   render();

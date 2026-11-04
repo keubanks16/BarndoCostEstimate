@@ -19,6 +19,7 @@ window.EstimatePDF = (function () {
   function fit(s, size, maxW, bold) { s = String(s || ''); if (width(s, size, bold) <= maxW) return s; while (s.length > 1 && width(s + '…', size, bold) > maxW) s = s.slice(0, -1); return s + '…'; }
 
   function build(S, T, money) {
+    const NAME = (S.title || '').trim() || 'Tinsley Barndominium — Cost Estimate';
     const pages = []; let ops = [], y;
     const gray = g => `${g} ${g} ${g}`;
     const text = (x, yy, s, size, bold, color, align) => {
@@ -32,7 +33,7 @@ window.EstimatePDF = (function () {
       if (ops.length) pages.push(ops.join('\n'));
       ops = []; y = M;
       if (!first) {
-        text(M, y + 8, 'Tinsley Barndominium — Cost Estimate (continued)', 9, true, gray(0.35)); y += 20;
+        text(M, y + 8, NAME + ' (continued)', 9, true, gray(0.35)); y += 20;
       }
     }
     function colHead() {
@@ -46,7 +47,7 @@ window.EstimatePDF = (function () {
 
     newPage(true);
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    text(M, y + 14, 'Tinsley Barndominium — Cost Estimate', 17, true); y += 22;
+    text(M, y + 14, NAME, 17, true); y += 22;
     text(M, y + 10, `Plan TB-4060 · 40' × 60' metal building home with loft · Georgia · ${Number(S.sf || 0).toLocaleString('en-US')} sf heated · land not included · ${date}`, 8.5, false, gray(0.35)); y += 22;
     // summary boxes
     const bw = (W - 2 * M - 10) / 2, sf = Number(S.sf) || 1;
@@ -114,7 +115,7 @@ window.EstimatePDF = (function () {
     const f2 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
     const kids = [];
     pages.forEach((p, i) => {
-      const footer = `BT /F1 7 Tf 0.5 0.5 0.5 rg ${M} 20 Td (${enc('Tinsley Barndominium · TB-4060 · Cost Estimate')}) Tj ET\nBT /F1 7 Tf 0.5 0.5 0.5 rg ${W - M - 40} 20 Td (${enc('Page ' + (i + 1) + ' of ' + pages.length)}) Tj ET`;
+      const footer = `BT /F1 7 Tf 0.5 0.5 0.5 rg ${M} 20 Td (${enc(NAME)}) Tj ET\nBT /F1 7 Tf 0.5 0.5 0.5 rg ${W - M - 40} 20 Td (${enc('Page ' + (i + 1) + ' of ' + pages.length)}) Tj ET`;
       const content = p + '\n' + footer;
       const cs = add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
       kids.push(add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${cs} 0 R >>`));
