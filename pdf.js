@@ -56,8 +56,10 @@ window.EstimatePDF = (function () {
     lines.slice(0, 4).forEach((ln, k) => text(M, y + 10 + k * 11, ln, 8.5, false, gray(0.35)));
     y += 22 + (Math.min(lines.length, 4) - 1) * 11;
     // summary boxes
-    const bw = (W - 2 * M - 10) / 2, sf = Number(S.sf) || 1;
-    [['OWNER-BUILDER TOTAL', T.ob], ['WITH A GENERAL CONTRACTOR', T.wg]].forEach(([lab, v], i) => {
+    const hasGC = Number(S.gc) > 0;
+    const boxes = hasGC ? [['OWNER-BUILDER TOTAL', T.ob], ['WITH A GENERAL CONTRACTOR', T.wg]] : [['TOTAL', T.ob]];
+    const bw = hasGC ? (W - 2 * M - 10) / 2 : (W - 2 * M), sf = Number(S.sf) || 1;
+    boxes.forEach(([lab, v], i) => {
       const x = M + i * (bw + 10);
       rect(x, y, bw, 62, '0.12 0.23 0.17');
       text(x + 12, y + 16, lab, 7.5, true, '0.85 0.9 0.87');
@@ -65,7 +67,7 @@ window.EstimatePDF = (function () {
       text(x + 12, y + 53, `${money(v.exp / sf)}/sf · range ${money(v.low)} – ${money(v.high)}`, 8, false, '0.85 0.9 0.87');
     });
     y += 72;
-    text(M, y + 9, `Construction subtotal ${money(T.exp)}  ·  Contingency ${(S.contingency * 100).toFixed(1).replace(/\.0$/, '')}% ${money(T.exp * S.contingency)}  ·  GC fee ${(S.gc * 100).toFixed(1).replace(/\.0$/, '')}% ${money(T.ob.exp * S.gc)}`, 8.5, false, gray(0.25));
+    text(M, y + 9, `Construction subtotal ${money(T.exp)}  ·  Contingency ${(S.contingency * 100).toFixed(1).replace(/\.0$/, '')}% ${money(T.exp * S.contingency)}${hasGC ? `  ·  GC fee ${(S.gc * 100).toFixed(1).replace(/\.0$/, '')}% ${money(T.ob.exp * S.gc)}` : ''}`, 8.5, false, gray(0.25));
     y += 22;
     // category summary
     text(M, y + 10, 'Summary by category', 11, true); y += 18;
@@ -79,9 +81,11 @@ window.EstimatePDF = (function () {
     const sumRow = (lab, v, bold) => { text(C.item, y + 9, lab, 9, bold); text(C.low, y + 9, money(v.low), 9, bold, gray(bold ? 0 : 0.4), 'right'); text(C.exp, y + 9, money(v.exp), 9, true, '0 0 0', 'right'); text(C.high, y + 9, money(v.high), 9, bold, gray(bold ? 0 : 0.4), 'right'); y += 14; };
     sumRow('Construction subtotal', { low: T.low, exp: T.exp, high: T.high });
     sumRow('Contingency', { low: T.low * S.contingency, exp: T.exp * S.contingency, high: T.high * S.contingency });
-    sumRow('Total — owner-builder', T.ob, true);
-    sumRow('General contractor fee', { low: T.ob.low * S.gc, exp: T.ob.exp * S.gc, high: T.ob.high * S.gc });
-    sumRow('Total — with a general contractor', T.wg, true);
+    sumRow(hasGC ? 'Total — owner-builder' : 'Total', T.ob, true);
+    if (hasGC) {
+      sumRow('General contractor fee', { low: T.ob.low * S.gc, exp: T.ob.exp * S.gc, high: T.ob.high * S.gc });
+      sumRow('Total — with a general contractor', T.wg, true);
+    }
     y += 12;
     // detail
     text(M, y + 10, 'Line-item detail', 11, true); y += 18; colHead();
