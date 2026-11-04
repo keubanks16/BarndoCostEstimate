@@ -53,7 +53,7 @@
     const t = totals(), sf = num(S.sf) || 1;
     const hasGC = num(S.gc) > 0;
     $('#tot').innerHTML = `
-      <div class="big ${hasGC ? '' : 'one'}"><div><span class="lbl">${hasGC ? 'Owner-builder total' : 'Total'}</span><b>${money(t.ob.exp)}</b><span class="sub">${money(t.ob.exp / sf)}/sf · range ${money(t.ob.low)}–${money(t.ob.high)}</span></div>
+      <div class="big ${hasGC ? '' : 'one'}"><div><span class="lbl">Owner-builder total</span><b>${money(t.ob.exp)}</b><span class="sub">${money(t.ob.exp / sf)}/sf · range ${money(t.ob.low)}–${money(t.ob.high)}</span></div>
       ${hasGC ? `<div><span class="lbl">With a general contractor</span><b>${money(t.wg.exp)}</b><span class="sub">${money(t.wg.exp / sf)}/sf · range ${money(t.wg.low)}–${money(t.wg.high)}</span></div>` : ''}</div>
       <div class="mini">Construction subtotal ${money(t.exp)} · contingency ${money(t.exp * num(S.contingency))}${hasGC ? ` · GC fee ${money(t.ob.exp * num(S.gc))}` : ''}</div>`;
     S.cats.forEach((c, ci) => { const el = document.getElementById('ct' + ci); if (el) el.textContent = money(t.cats[ci].exp); });
@@ -116,7 +116,7 @@
     S.cats.forEach(c => c.items.forEach(i => rows.push([c.name, i.name, i.basis, num(i.low), num(i.exp), num(i.high), i.status, i.note])));
     const t = totals();
     rows.push([], ['', 'Construction subtotal', '', t.low, t.exp, t.high], ['', 'Contingency ' + (num(S.contingency) * 100) + '%', '', t.low * num(S.contingency), t.exp * num(S.contingency), t.high * num(S.contingency)],
-      num(S.gc) > 0 ? ['', 'Total owner-builder', '', t.ob.low, t.ob.exp, t.ob.high] : ['', 'Total', '', t.ob.low, t.ob.exp, t.ob.high]);
+      ['', 'Total owner-builder', '', t.ob.low, t.ob.exp, t.ob.high]);
     if (num(S.gc) > 0) rows.push(['', 'GC fee ' + (num(S.gc) * 100) + '%', '', t.ob.low * num(S.gc), t.ob.exp * num(S.gc), t.ob.high * num(S.gc)], ['', 'Total with GC', '', t.wg.low, t.wg.exp, t.wg.high]);
     return rows.map(r => r.map(q).join(',')).join('\n');
   }

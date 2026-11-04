@@ -57,7 +57,7 @@ window.EstimatePDF = (function () {
     y += 22 + (Math.min(lines.length, 4) - 1) * 11;
     // summary boxes
     const hasGC = Number(S.gc) > 0;
-    const boxes = hasGC ? [['OWNER-BUILDER TOTAL', T.ob], ['WITH A GENERAL CONTRACTOR', T.wg]] : [['TOTAL', T.ob]];
+    const boxes = hasGC ? [['OWNER-BUILDER TOTAL', T.ob], ['WITH A GENERAL CONTRACTOR', T.wg]] : [['OWNER-BUILDER TOTAL', T.ob]];
     const bw = hasGC ? (W - 2 * M - 10) / 2 : (W - 2 * M), sf = Number(S.sf) || 1;
     boxes.forEach(([lab, v], i) => {
       const x = M + i * (bw + 10);
@@ -81,7 +81,7 @@ window.EstimatePDF = (function () {
     const sumRow = (lab, v, bold) => { text(C.item, y + 9, lab, 9, bold); text(C.low, y + 9, money(v.low), 9, bold, gray(bold ? 0 : 0.4), 'right'); text(C.exp, y + 9, money(v.exp), 9, true, '0 0 0', 'right'); text(C.high, y + 9, money(v.high), 9, bold, gray(bold ? 0 : 0.4), 'right'); y += 14; };
     sumRow('Construction subtotal', { low: T.low, exp: T.exp, high: T.high });
     sumRow('Contingency', { low: T.low * S.contingency, exp: T.exp * S.contingency, high: T.high * S.contingency });
-    sumRow(hasGC ? 'Total — owner-builder' : 'Total', T.ob, true);
+    sumRow('Total — owner-builder', T.ob, true);
     if (hasGC) {
       sumRow('General contractor fee', { low: T.ob.low * S.gc, exp: T.ob.exp * S.gc, high: T.ob.high * S.gc });
       sumRow('Total — with a general contractor', T.wg, true);
