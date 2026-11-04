@@ -10,6 +10,31 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const open = new Set();
 
+  // ---- Auto low/high: each item keeps a spread (low ÷ expected, high ÷ expected).
+  // Changing Expected moves Low and High with it; editing Low or High by hand sets a new spread.
+  const DEF_LR = 0.75, DEF_HR = 1.45, FIXED = ['Contracted', 'Paid'];
+  const roundNice = n => n >= 1000 ? Math.round(n / 100) * 100 : Math.round(n / 10) * 10;
+  const sane = o => o && num(o.exp) > 0 && num(o.low) <= num(o.exp) && num(o.exp) <= num(o.high);
+  function origFor(ci, ii, it) {
+    for (const c of ORIGINAL.cats) for (const o of c.items) if (o.name === it.name) return o;
+    const c = ORIGINAL.cats[ci]; return c && c.items[ii];
+  }
+  function spread(it, ci, ii) {
+    if (isFinite(it.lr) && isFinite(it.hr)) return [it.lr, it.hr];
+    const o = sane(it) ? it : origFor(ci, ii, it);
+    return sane(o) ? [num(o.low) / num(o.exp), num(o.high) / num(o.exp)] : [DEF_LR, DEF_HR];
+  }
+  function applyRange(it, ci, ii) {
+    const [lr, hr] = spread(it, ci, ii); it.lr = lr; it.hr = hr;
+    const e = num(it.exp);
+    if (FIXED.includes(it.status)) { it.low = e; it.high = e; return; }
+    it.low = roundNice(e * lr); it.high = roundNice(e * hr);
+  }
+  // Fix saved estimates where Expected was changed before this feature (low above expected, etc.)
+  S.cats.forEach((c, ci) => c.items.forEach((it, ii) => {
+    if (num(it.low) > num(it.exp) || num(it.exp) > num(it.high)) { delete it.lr; delete it.hr; applyRange(it, ci, ii); }
+  }));
+
   function totals() {
     const t = { low: 0, exp: 0, high: 0, cats: [] };
     S.cats.forEach(c => { const ct = { low: 0, exp: 0, high: 0 }; c.items.forEach(i => { ct.low += num(i.low); ct.exp += num(i.exp); ct.high += num(i.high); }); t.cats.push(ct); t.low += ct.low; t.exp += ct.exp; t.high += ct.high; });
@@ -42,6 +67,7 @@
         <div class="three"><label>Low<input inputmode="decimal" data-f="low" value="${esc(money(num(it.low)))}" ${readOnly ? 'disabled' : ''}></label>
         <label>Expected<input inputmode="decimal" data-f="exp2" value="${esc(money(num(it.exp)))}" ${readOnly ? 'disabled' : ''}></label>
         <label>High<input inputmode="decimal" data-f="high" value="${esc(money(num(it.high)))}" ${readOnly ? 'disabled' : ''}></label></div>
+        <div class="hint">Low and high follow Expected automatically. Change either one to set a new spread for this item.${FIXED.includes(it.status) ? ' ' + esc(it.status) + ' items lock low and high to Expected.' : ''}</div>
         <label>Status<select data-f="status" ${readOnly ? 'disabled' : ''}>${['Estimate', 'Quoted', 'Contracted', 'Paid'].map(s => `<option ${s === it.status ? 'selected' : ''}>${s}</option>`).join('')}</select></label>
         <label>Notes<textarea data-f="note" rows="2" ${readOnly ? 'disabled' : ''}>${esc(it.note)}</textarea></label>
         ${readOnly ? '' : `<button class="del" data-act="del">Delete item</button>`}
@@ -115,7 +141,18 @@
     const i = e.target, f = i.dataset.f, itEl = i.closest('.item');
     if (itEl && f) {
       const it = S.cats[+itEl.closest('.cat').dataset.ci].items[+itEl.dataset.ii];
-      if (f === 'exp' || f === 'exp2') it.exp = num(i.value); else if (f === 'low' || f === 'high') it[f] = num(i.value); else it[f] = i.value;
+      const ci = +itEl.closest('.cat').dataset.ci, ii = +itEl.dataset.ii;
+      if (f === 'exp' || f === 'exp2') {
+        const [lr0, hr0] = spread(it, ci, ii); it.lr = lr0; it.hr = hr0;
+        it.exp = num(i.value); applyRange(it, ci, ii);
+        itEl.querySelectorAll('input[data-f="low"],input[data-f="high"],input[data-f="exp"],input[data-f="exp2"]').forEach(x => {
+          if (x !== i) x.value = money(num(x.dataset.f === 'exp2' ? it.exp : it[x.dataset.f]));
+        });
+      } else if (f === 'low' || f === 'high') {
+        it[f] = num(i.value);
+        if (num(it.exp) > 0) { const [lr, hr] = spread(it, ci, ii); it.lr = f === 'low' ? it.low / num(it.exp) : lr; it.hr = f === 'high' ? it.high / num(it.exp) : hr; }
+      } else it[f] = i.value;
+      if (f === 'status') { applyRange(it, ci, ii); }
       if (f === 'name') itEl.querySelector('.nm').firstChild.textContent = i.value;
       changed();
     }

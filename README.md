@@ -6,6 +6,7 @@ Editable construction cost estimate for the **Tinsley Barndominium (plan TB-4060
 
 ## Using it
 - Tap any price to change it; totals, contingency, GC fee and $/sq ft update instantly.
+- **Low and high follow Expected automatically** — each line keeps its spread (e.g. 75% / 145% of expected). Edit low or high by hand to set a new spread for that line; Contracted and Paid lines lock low = high = expected.
 - Tap ▸ on a line for low / high numbers, item name, basis, notes and status (Estimate, Quoted, Contracted, Paid).
 - **+ Add item** in any category; delete lines you don't need.
 - Edits save automatically in your browser (per device). Use **Backup (.json)** / **Restore backup** to move them to another device, **Export CSV** for a spreadsheet, **Export PDF** for a printable summary + line-item report.
